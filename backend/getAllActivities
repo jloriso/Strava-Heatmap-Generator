@@ -1,0 +1,138 @@
+import requests
+from dotenv import load_dotenv
+import os
+import json
+import requests
+from dataClasses.ActivityRoute import ActivityRoute
+import folium
+from folium.plugins import HeatMap
+
+
+#-------------------------
+# 1. load environment variables
+#-------------------------
+load_dotenv()
+
+CLIENT_ID = os.getenv("STRAVA_CLIENT_ID")
+CLIENT_SECRET = os.getenv("STRAVA_CLIENT_SECRET")
+REFRESH_TOKEN = os.getenv("STRAVA_REFRESH_TOKEN")
+ACCESS_TOKEN = os.getenv("STRAVA_ACCESS_TOKEN")
+CODE = os.getenv("CODE")
+
+#-------------------------
+# 2. refresh access token
+#-------------------------
+def refresh_access_token():
+    """Refresh the Strava access token using the refresh token."""
+    url = "https://www.strava.com/oauth/token"
+    payload = {
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "grant_type": "refresh_token",
+        "refresh_token": REFRESH_TOKEN,
+    }
+
+    response = requests.post(url, data=payload)
+    if response.status_code != 200:
+        print("Error refreshing token:", pretty_print(response.text))
+        return None
+
+    tokens = response.json()
+    print("Token refreshed\n")
+
+    # Update the access token in memory
+    global ACCESS_TOKEN
+    ACCESS_TOKEN = tokens["access_token"]
+
+    with open(".env", "w") as f:
+        f.write(
+            f"STRAVA_CLIENT_ID={CLIENT_ID}\n"
+            f"STRAVA_CLIENT_SECRET={CLIENT_SECRET}\n"
+            f"STRAVA_REFRESH_TOKEN={tokens['refresh_token']}\n"
+            f"STRAVA_ACCESS_TOKEN={tokens['access_token']}\n"
+            f"STRAVA_EXPIRES_AT={tokens['expires_at']}\n"
+        )
+
+    return tokens
+
+def pretty_print(json_data):
+    pretty_json = json.dumps(json_data, indent=4)
+    print(pretty_json)
+
+#-------------------------
+# 3. get all activities
+#-------------------------
+def get_strava_activities():
+    global ACCESS_TOKEN
+
+    url = "https://www.strava.com/api/v3/athlete/activities"
+    header = {'Authorization': f'Bearer {ACCESS_TOKEN}'}
+
+    page = 1
+    per_page = 100
+    activities = []
+    #count = 0
+
+    while True:
+        
+        param = {'per_page': per_page, 'page': page}
+        res = requests.get(url, headers=header, params=param)
+
+        if res.status_code == 401:
+            print("Access token expired, refreshing...")
+            refresh_access_token()
+            header["Authorization"] = f"Bearer {ACCESS_TOKEN}"
+            res = requests.get(url, headers=header)
+
+        if res.status_code != 200:
+            print("Error fetching club info:\n", pretty_print(res.json()))
+            return
+
+        data = res.json()
+        if not data:
+            break
+
+        for activity in data:
+            if "map" not in activity or "summary_polyline" not in activity["map"]:
+                continue
+            #count += 1
+
+        activities.extend(data)
+        page += 1
+
+    print(f"Total activities fetched: {len(activities)}")
+    return activities
+
+#-------------------------
+# 4. make heatmap
+# ------------------------
+def make_heatmap(routes, output_file="heatmap.html", show_routes=False):
+    all_points = [coord for route in routes for coord in route.coordinates]
+    if not all_points:
+        raise ValueError("No coordinates found in provided routes.")
+
+    avg_lat = sum(lat for lat, _ in all_points) / len(all_points)
+    avg_lon = sum(lon for _, lon in all_points) / len(all_points)
+
+    m = folium.Map(location=[avg_lat, avg_lon], zoom_start=12, tiles="cartodbpositron")
+
+    HeatMap(all_points, radius=6, blur=4, max_zoom=13).add_to(m)
+
+    if show_routes:
+        for route in routes:
+            if route.coordinates:
+                folium.PolyLine(route.coordinates, color="blue", weight=2, opacity=0.4).add_to(m)
+
+    m.save(output_file)
+    print(f"Heatmap generated and saved to {output_file}")
+
+
+if __name__ == "__main__":
+    
+    activities = get_strava_activities()
+    #print(activities)
+
+    routes = ActivityRoute.build_many(activities)
+    print(f"Total routes built: {len(routes)}")
+
+    make_heatmap(routes, output_file="heatmap.html", show_routes=True)
