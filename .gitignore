@@ -1,2 +1,5 @@
 .env
 heatmap.html
+data/activities.db
+activities.db
+/heatmaps/

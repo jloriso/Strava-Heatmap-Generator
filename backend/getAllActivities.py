@@ -4,11 +4,10 @@ import os
 import json
 import requests
 from dataClasses.ActivityRoute import ActivityRoute
-import folium
-from folium.plugins import HeatMap
 from datetime import datetime
 import sqlite3
 from dbManager import save_activities_to_db, load_activities_from_db
+import heatmapController
 
 
 #-------------------------
@@ -107,30 +106,7 @@ def get_strava_activities():
     return activities
 
 #-------------------------
-# 4. make heatmap
-# ------------------------
-def make_heatmap(routes, output_file="heatmap.html", show_routes=False):
-    all_points = [coord for route in routes for coord in route.coordinates]
-    if not all_points:
-        raise ValueError("No coordinates found in provided routes.")
-
-    avg_lat = sum(lat for lat, _ in all_points) / len(all_points)
-    avg_lon = sum(lon for _, lon in all_points) / len(all_points)
-
-    m = folium.Map(location=[avg_lat, avg_lon], zoom_start=12, tiles="cartodbpositron")
-
-    HeatMap(all_points, radius=6, blur=4, max_zoom=13).add_to(m)
-
-    if show_routes:
-        for route in routes:
-            if route.coordinates:
-                folium.PolyLine(route.coordinates, color="blue", weight=2, opacity=0.4).add_to(m)
-
-    m.save(output_file)
-    print(f"Heatmap generated and saved to {output_file}")
-
-#-------------------------
-# 5. grab newest activites
+# 4. grab newest activites
 # ------------------------
 def get_newest_activites():
     conn = sqlite3.connect("activities.db")
@@ -192,24 +168,26 @@ def one_request():
 
 if __name__ == "__main__":
     
-    activites = get_strava_activities()
-    #activites = get_newest_activites()
-    #activites = one_request()
+    #activites = get_strava_activities()
+    # activites = one_request()
 
-    if activites:
-        save_activities_to_db([{
-            "id": activity.get("id"),
-            "name": activity.get("name"),
-            "start_date": activity.get("start_date"),
-            "time_zone": activity.get("time_zone"),
-            "activity_type": activity.get("activity_type"),
-            "distance": activity.get("distance"),
-            "moving_time": activity.get("moving_time"),
-            "polyline": activity.get("map", {}).get("summary_polyline")
-        } for activity in activites])
+    # activites = get_newest_activites()
+
+    # if activites:
+    #     save_activities_to_db([{
+    #         "id": activity.get("id"),
+    #         "name": activity.get("name"),
+    #         "start_date": activity.get("start_date"),
+    #         "time_zone": activity.get("time_zone"),
+    #         "activity_type": activity.get("activity_type"),
+    #         "distance": activity.get("distance"),
+    #         "moving_time": activity.get("moving_time"),
+    #         "polyline": activity.get("map", {}).get("summary_polyline")
+    #     } for activity in activites])
 
     dbModel = load_activities_from_db()
 
     routes = ActivityRoute.build_many_from_db(dbModel)
 
-    make_heatmap(routes, output_file="heatmap.html", show_routes=True)
+    heatmapController.build_frequency_map(routes).save("heatmaps/frequency_heatmap.html")
+    heatmapController.make_heatmap(routes, output_file="heatmaps/standard_heatmap.html", show_routes=True)
