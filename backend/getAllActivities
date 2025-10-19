@@ -6,6 +6,9 @@ import requests
 from dataClasses.ActivityRoute import ActivityRoute
 import folium
 from folium.plugins import HeatMap
+from datetime import datetime
+import sqlite3
+from dbManager import save_activities_to_db, load_activities_from_db
 
 
 #-------------------------
@@ -126,13 +129,87 @@ def make_heatmap(routes, output_file="heatmap.html", show_routes=False):
     m.save(output_file)
     print(f"Heatmap generated and saved to {output_file}")
 
+#-------------------------
+# 5. grab newest activites
+# ------------------------
+def get_newest_activites():
+    conn = sqlite3.connect("activities.db")
+    c = conn.cursor()
+    c.execute("SELECT MAX(start_date) FROM activities")
+    last_date = c.fetchone()[0]
+    conn.close()
+
+    after_ts = None
+    if last_date:
+        after_ts = int(datetime.fromisoformat(last_date).timestamp())
+
+    url = "https://www.strava.com/api/v3/athlete/activities"
+    headers = {'Authorization': f'Bearer {ACCESS_TOKEN}'}
+    params = {'after': after_ts} if after_ts else {}
+
+    res = requests.get(url, headers=headers, params=params)
+    if res.status_code == 401:
+        print("Access token expired, refreshing...")
+        refresh_access_token()
+        headers["Authorization"] = f"Bearer {ACCESS_TOKEN}"
+        res = requests.get(url, headers=headers, params=params)
+
+    if res.status_code != 200:
+        print("Error fetching activities:\n", pretty_print(res.json()))
+        return
+
+    new_activities = res.json()
+
+    if new_activities:
+        print(f"Fetched {len(new_activities)} activities from Strava")
+        return new_activities
+    else:
+        print("No new activities found.")
+
+def one_request():
+    url = "https://www.strava.com/api/v3/athlete/activities"
+    headers = {'Authorization': f'Bearer {ACCESS_TOKEN}'}
+    params = {'per_page': 200, 'page': 1}
+
+    res = requests.get(url, headers=headers, params=params)
+    if res.status_code == 401:
+        print("Access token expired, refreshing...")
+        refresh_access_token()
+        headers["Authorization"] = f"Bearer {ACCESS_TOKEN}"
+        res = requests.get(url, headers=headers, params=params)
+
+    if res.status_code != 200:
+        print("Error fetching activities:\n", pretty_print(res.json()))
+        return
+
+    activities = res.json()
+
+    if activities:
+        print(f"Fetched {len(activities)} activities from Strava")
+        return activities
+    else:
+        print("No activities found.")
 
 if __name__ == "__main__":
     
-    activities = get_strava_activities()
-    #print(activities)
+    activites = get_strava_activities()
+    #activites = get_newest_activites()
+    #activites = one_request()
 
-    routes = ActivityRoute.build_many(activities)
-    print(f"Total routes built: {len(routes)}")
+    if activites:
+        save_activities_to_db([{
+            "id": activity.get("id"),
+            "name": activity.get("name"),
+            "start_date": activity.get("start_date"),
+            "time_zone": activity.get("time_zone"),
+            "activity_type": activity.get("activity_type"),
+            "distance": activity.get("distance"),
+            "moving_time": activity.get("moving_time"),
+            "polyline": activity.get("map", {}).get("summary_polyline")
+        } for activity in activites])
+
+    dbModel = load_activities_from_db()
+
+    routes = ActivityRoute.build_many_from_db(dbModel)
 
     make_heatmap(routes, output_file="heatmap.html", show_routes=True)
