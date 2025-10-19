@@ -189,5 +189,13 @@ if __name__ == "__main__":
 
     routes = ActivityRoute.build_many_from_db(dbModel)
 
-    heatmapController.build_frequency_map(routes).save("heatmaps/frequency_heatmap.html")
-    heatmapController.make_heatmap(routes, output_file="heatmaps/standard_heatmap.html", show_routes=True)
+    locations = {
+        "USA": [38.0, -94.8, 5],
+        "Chicago": [41.8, -87.8, 10],
+        "Kalamazoo": [42.2, -85.6, 11],
+        "World": [20.0, 0.0, 3]
+    }
+
+    heatmapController.build_frequency_map(routes, locations=locations, output_file="heatmaps/frequency_heatmap.html")
+    #heatmapController.make_heatmap(routes, output_file="heatmaps/standard_heatmap.html", show_routes=True)
+    #heatmapController.build_animated_heatmap(routes, output_file="heatmaps/animated_heatmap.html")
