@@ -5,7 +5,7 @@ from collections import Counter, defaultdict
 def make_heatmap(routes, 
                  output_file="heatmaps/standard_heatmap.html", 
                  locations=None,
-                 precision=4):
+                 precision=5):
     weighted_coords = get_weighted_coordinates(routes, precision=precision)
     if not weighted_coords:
         raise ValueError("No coordinates found in provided routes.")
@@ -27,7 +27,7 @@ def make_heatmap(routes,
     m.save(output_file)
     print(f"Heatmap generated and saved to {output_file}")
 
-def get_weighted_coordinates(activities, precision=4):
+def get_weighted_coordinates(activities, precision=5):
     all_coords = []
     for act in activities:
         coords = getattr(act, "coordinates", None)
