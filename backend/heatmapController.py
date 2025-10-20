@@ -68,13 +68,13 @@ def build_frequency_map(activities, locations=None, output_file="heatmaps/freque
         if not coords:
             continue
 
-        rounded = [(round(lat, 5), round(lon, 5)) for lat, lon in coords]
+        rounded = [(round(lat, 6), round(lon, 6)) for lat, lon in coords]
 
         freq = Counter(rounded)
         weighted_data = [[lat, lon, count] for (lat, lon), count in freq.items()]
 
         layer = folium.FeatureGroup(name=f"{act_type} Heatmap", show=True)
-        HeatMap(weighted_data, radius=8, blur=10, max_zoom=12).add_to(layer)
+        HeatMap(weighted_data, radius=8, blur=12, max_zoom=12).add_to(layer)
         layer.add_to(m)
 
     if locations:
@@ -129,14 +129,62 @@ def add_bookmark_sidebar(m, locations):
     </div>
 
     <script>
+    function getFoliumMap() {{
+        return Object.values(window).find(v => v instanceof L.Map) || null;
+    }}
+
+    function detachHeatLayers(map) {{
+        const store = [];
+
+        map.eachLayer(function(layer) {{
+            if (layer instanceof L.HeatLayer) {{
+                store.push({{ layer: layer, parent: map }});
+                map.removeLayer(layer);
+            }} else if (layer instanceof L.LayerGroup || layer instanceof L.FeatureGroup) {{
+                const toRemove = [];
+                layer.eachLayer(function(child) {{
+                    if (child instanceof L.HeatLayer) {{
+                        toRemove.push(child);
+                    }}
+                    if (child && (child._heatmap || (child._baseLayer && child._baseLayer instanceof L.HeatLayer))) {{
+                        toRemove.push(child);
+                    }}
+                }});
+                toRemove.forEach(function(child) {{
+                    store.push({{ layer: child, parent: layer }});
+                    layer.removeLayer(child);
+                }});
+            }}
+        }});
+
+        return store;
+    }}
+
+    function restoreHeatLayers(map, store) {{
+        store.forEach(function(entry) {{
+            const parent = entry.parent;
+            if (parent && typeof parent.addLayer === 'function') {{
+                parent.addLayer(entry.layer);
+            }} else {{
+                map.addLayer(entry.layer);
+            }}
+        }});
+    }}
+
     function flyToLocation(lat, lon, zoom) {{
-        // dynamically grab the folium map object
-        var map = Object.values(window).find(v => v instanceof L.Map);
-        if (map) {{
-            map.flyTo([lat, lon], zoom);
-        }} else {{
+        const map = getFoliumMap();
+        if (!map) {{
             console.error("Map object not found!");
+            return;
         }}
+
+        const heatStore = detachHeatLayers(map);
+
+        map.once('moveend', function() {{
+            restoreHeatLayers(map, heatStore);
+        }});
+
+        map.flyTo([lat, lon], zoom);
     }}
     </script>
     """
@@ -147,7 +195,6 @@ def add_bookmark_sidebar(m, locations):
 
     sidebar_final = sidebar_html.format(buttons_html)
     m.get_root().html.add_child(folium.Element(sidebar_final))
-
 
 def group_activities_by_type(activities):
     grouped = defaultdict(list)
