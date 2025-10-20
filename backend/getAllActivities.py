@@ -197,5 +197,5 @@ if __name__ == "__main__":
     }
 
     heatmapController.build_frequency_map(routes, locations=locations, output_file="heatmaps/frequency_heatmap.html")
-    #heatmapController.make_heatmap(routes, output_file="heatmaps/standard_heatmap.html", show_routes=True)
+    #heatmapController.make_heatmap(routes, output_file="heatmaps/standard_heatmap.html", locations=locations)
     #heatmapController.build_animated_heatmap(routes, output_file="heatmaps/animated_heatmap.html")

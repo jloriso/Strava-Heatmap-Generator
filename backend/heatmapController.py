@@ -1,24 +1,28 @@
 import folium
-from folium.plugins import HeatMap, HeatMapWithTime
+from folium.plugins import HeatMap
 from collections import Counter, defaultdict
-from datetime import datetime
 
-def make_heatmap(routes, output_file="heatmaps/standard_heatmap.html", show_routes=False):
-    all_points = [coord for route in routes for coord in route.coordinates]
-    if not all_points:
+def make_heatmap(routes, 
+                 output_file="heatmaps/standard_heatmap.html", 
+                 locations=None,
+                 precision=4):
+    weighted_coords = get_weighted_coordinates(routes, precision=precision)
+    if not weighted_coords:
         raise ValueError("No coordinates found in provided routes.")
 
-    avg_lat = sum(lat for lat, _ in all_points) / len(all_points)
-    avg_lon = sum(lon for _, lon in all_points) / len(all_points)
+    m = folium.Map(location=[41.8, -87.8], zoom_start=10, tiles="cartodbpositron")
 
-    m = folium.Map(location=[avg_lat, avg_lon], zoom_start=12, tiles="cartodbpositron")
+    HeatMap(
+        data=weighted_coords,
+        radius=10,
+        blur=12,
+        max_zoom=13,
+        min_opacity=0.35,
+        gradient={0.2: 'blue', 0.4: 'lime', 0.6: 'orange', 0.8: 'red'}
+    ).add_to(m)
 
-    HeatMap(all_points, radius=6, blur=4, max_zoom=13).add_to(m)
-
-    if show_routes:
-        for route in routes:
-            if route.coordinates:
-                folium.PolyLine(route.coordinates, color="blue", weight=2, opacity=0.4).add_to(m)
+    if locations:
+        add_bookmark_sidebar(m, locations)
 
     m.save(output_file)
     print(f"Heatmap generated and saved to {output_file}")
@@ -26,7 +30,6 @@ def make_heatmap(routes, output_file="heatmaps/standard_heatmap.html", show_rout
 def get_weighted_coordinates(activities, precision=4):
     all_coords = []
     for act in activities:
-        # Support ActivityRoute dataclass and dicts
         coords = getattr(act, "coordinates", None)
         if coords is None and isinstance(act, dict):
             coords = act.get("coordinates")
@@ -34,7 +37,6 @@ def get_weighted_coordinates(activities, precision=4):
         if not coords:
             continue
 
-        # Round to the desired precision before counting
         rounded = [(round(lat, precision), round(lon, precision)) for lat, lon in coords]
         all_coords.extend(rounded)
 
@@ -79,8 +81,6 @@ def build_frequency_map(activities, locations=None, output_file="heatmaps/freque
 
     if locations:
         add_bookmark_sidebar(m, locations)
-
-    folium.LayerControl(collapsed=False).add_to(m)
 
     print("Frequency heatmap generated and saved to", output_file)
     m.save(output_file)
