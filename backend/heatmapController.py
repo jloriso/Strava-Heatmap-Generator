@@ -10,7 +10,7 @@ def make_heatmap(routes,
     if not weighted_coords:
         raise ValueError("No coordinates found in provided routes.")
 
-    m = folium.Map(location=[41.8, -87.8], zoom_start=10, tiles="cartodbpositron")
+    m = folium.Map(location=[42.0707, -87.7368], zoom_start=10, tiles="cartodbpositron")
 
     HeatMap(
         data=weighted_coords,
@@ -195,6 +195,8 @@ def add_bookmark_sidebar(m, locations):
 
     sidebar_final = sidebar_html.format(buttons_html)
     m.get_root().html.add_child(folium.Element(sidebar_final))
+
+
 
 def group_activities_by_type(activities):
     grouped = defaultdict(list)

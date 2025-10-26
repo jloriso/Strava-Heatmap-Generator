@@ -1,6 +1,6 @@
 import sqlite3
 
-def save_activities_to_db(activities, db_path="activities.db"):
+def save_activities_to_db(activities, db_path="data/activities.db"):
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
 
@@ -23,7 +23,7 @@ def save_activities_to_db(activities, db_path="activities.db"):
     conn.close()
     print(f"Saved {len(activities)} activities to database at {db_path}")
 
-def load_activities_from_db(db_path="activities.db"):
+def load_activities_from_db(db_path="data/activities.db"):
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
 
@@ -47,3 +47,15 @@ def load_activities_from_db(db_path="activities.db"):
     print(f"Loaded {len(activities)} activities from database at {db_path}")
     return activities
 
+def get_latest_activity_date(db_path="data/activities.db"):
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM activities")
+    activity_count = c.fetchone()[0]
+    if activity_count == 0:
+        conn.close()
+        return None
+    c.execute("SELECT MAX(start_date) FROM activities")
+    last_date = c.fetchone()[0]
+    conn.close()
+    return last_date

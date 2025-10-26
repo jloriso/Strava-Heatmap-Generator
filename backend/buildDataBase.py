@@ -1,6 +1,6 @@
 import sqlite3
 
-def init_db(db_path="activities.db"):
+def init_db(db_path="data/activities.db"):
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
 
@@ -24,7 +24,7 @@ def init_db(db_path="activities.db"):
 
 import sqlite3
 
-def clear_activities_table(db_path="activities.db"):
+def clear_activities_table(db_path="data/activities.db"):
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     c.execute("DROP TABLE IF EXISTS activities")

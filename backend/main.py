@@ -1,0 +1,37 @@
+from dataClasses.ActivityRoute import ActivityRoute
+import dbManager
+import heatmapController
+import environmentManager
+import stravaRepository
+
+if __name__ == "__main__":
+    environmentManager.init_env()
+
+    activities = stravaRepository.get_newest_activites()
+
+    if activities:
+        dbManager.save_activities_to_db([{
+            "id": activity.get("id"),
+            "name": activity.get("name"),
+            "start_date": activity.get("start_date"),
+            "time_zone": activity.get("time_zone"),
+            "activity_type": activity.get("activity_type"),
+            "distance": activity.get("distance"),
+            "moving_time": activity.get("moving_time"),
+            "polyline": activity.get("map", {}).get("summary_polyline")
+        } for activity in activities])
+
+    dbModel = dbManager.load_activities_from_db()
+
+    routes = ActivityRoute.build_many_from_db(dbModel)
+
+    locations = {
+        "USA": [38.0, -94.8, 5],
+        "Chicago": [41.8, -87.8, 10],
+        "Kalamazoo": [42.2, -85.6, 11],
+        "World": [20.0, 0.0, 3]
+    }
+
+    heatmapController.build_frequency_map(routes, locations=locations, output_file="heatmaps/frequency_heatmap.html")
+    heatmapController.make_heatmap(routes, output_file="heatmaps/standard_heatmap.html", locations=locations)
+    #heatmapController.build_animated_heatmap(routes, output_file="heatmaps/animated_heatmap.html")
