@@ -1,31 +1,7 @@
 import folium
 from folium.plugins import HeatMap
 from collections import Counter, defaultdict
-
-def make_heatmap(routes, 
-                 output_file="heatmaps/standard_heatmap.html", 
-                 locations=None,
-                 precision=5):
-    weighted_coords = get_weighted_coordinates(routes, precision=precision)
-    if not weighted_coords:
-        raise ValueError("No coordinates found in provided routes.")
-
-    m = folium.Map(location=[42.0707, -87.7368], zoom_start=10, tiles="cartodbpositron")
-
-    HeatMap(
-        data=weighted_coords,
-        radius=10,
-        blur=12,
-        max_zoom=13,
-        min_opacity=0.35,
-        gradient={0.2: 'blue', 0.4: 'lime', 0.6: 'orange', 0.8: 'red'}
-    ).add_to(m)
-
-    if locations:
-        add_bookmark_sidebar(m, locations)
-
-    m.save(output_file)
-    print(f"Heatmap generated and saved to {output_file}")
+from controls import bookMarkControl
 
 def get_weighted_coordinates(activities, precision=5):
     all_coords = []
@@ -61,8 +37,8 @@ def add_weighted_heatmap(m, activities):
         }
     ).add_to(m)
 
-def build_frequency_map(activities, locations=None, output_file="heatmaps/frequency_heatmap.html"):
-    m = folium.Map(location=[41.8, -87.8], zoom_start=10, tiles="CartoDB Positron")
+def build_frequency_map(activities, locations=None, output_file="heatmaps/standard_heatmap.html"):
+    m = folium.Map(location=[42.0707, -87.7368], zoom_start=10, tiles="cartodbpositron")
 
     grouped = group_activities_by_type(activities)
 
@@ -80,123 +56,10 @@ def build_frequency_map(activities, locations=None, output_file="heatmaps/freque
         layer.add_to(m)
 
     if locations:
-        add_bookmark_sidebar(m, locations)
+        bookMarkControl.add_bookmark_sidebar(m, locations)
 
     print("Frequency heatmap generated and saved to", output_file)
     m.save(output_file)
-
-def add_bookmark_sidebar(m, locations):
-    sidebar_html = """
-    <style>
-    .sidebar {{
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        z-index: 9999;
-        background-color: white;
-        padding: 10px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        font-family: Arial, sans-serif;
-        max-height: 70vh;
-        overflow-y: auto;
-    }}
-    .sidebar h4 {{
-        margin: 0 0 8px 0;
-        font-size: 16px;
-        text-align: center;
-    }}
-    .sidebar button {{
-        display: block;
-        width: 100%;
-        margin: 4px 0;
-        padding: 6px;
-        border: none;
-        background-color: #2a93d5;
-        color: white;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 14px;
-    }}
-    .sidebar button:hover {{
-        background-color: #1b6fa1;
-    }}
-    </style>
-
-    <div class="sidebar">
-        <h4>📍 Locations</h4>
-        {}
-    </div>
-
-    <script>
-    function getFoliumMap() {{
-        return Object.values(window).find(v => v instanceof L.Map) || null;
-    }}
-
-    function detachHeatLayers(map) {{
-        const store = [];
-
-        map.eachLayer(function(layer) {{
-            if (layer instanceof L.HeatLayer) {{
-                store.push({{ layer: layer, parent: map }});
-                map.removeLayer(layer);
-            }} else if (layer instanceof L.LayerGroup || layer instanceof L.FeatureGroup) {{
-                const toRemove = [];
-                layer.eachLayer(function(child) {{
-                    if (child instanceof L.HeatLayer) {{
-                        toRemove.push(child);
-                    }}
-                    if (child && (child._heatmap || (child._baseLayer && child._baseLayer instanceof L.HeatLayer))) {{
-                        toRemove.push(child);
-                    }}
-                }});
-                toRemove.forEach(function(child) {{
-                    store.push({{ layer: child, parent: layer }});
-                    layer.removeLayer(child);
-                }});
-            }}
-        }});
-
-        return store;
-    }}
-
-    function restoreHeatLayers(map, store) {{
-        store.forEach(function(entry) {{
-            const parent = entry.parent;
-            if (parent && typeof parent.addLayer === 'function') {{
-                parent.addLayer(entry.layer);
-            }} else {{
-                map.addLayer(entry.layer);
-            }}
-        }});
-    }}
-
-    function flyToLocation(lat, lon, zoom) {{
-        const map = getFoliumMap();
-        if (!map) {{
-            console.error("Map object not found!");
-            return;
-        }}
-
-        const heatStore = detachHeatLayers(map);
-
-        map.once('moveend', function() {{
-            restoreHeatLayers(map, heatStore);
-        }});
-
-        map.flyTo([lat, lon], zoom);
-    }}
-    </script>
-    """
-
-    buttons_html = ""
-    for name, (lat, lon, zoom) in locations.items():
-        buttons_html += f'<button onclick="flyToLocation({lat}, {lon}, {zoom})">{name}</button>'
-
-    sidebar_final = sidebar_html.format(buttons_html)
-    m.get_root().html.add_child(folium.Element(sidebar_final))
-
-
 
 def group_activities_by_type(activities):
     grouped = defaultdict(list)
