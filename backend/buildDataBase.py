@@ -6,7 +6,8 @@ def init_db(db_path="data/activities.db"):
 
     c.execute("""
     CREATE TABLE IF NOT EXISTS activities (
-        id INTEGER PRIMARY KEY,
+        athleteid INTEGER,
+        activityid INTEGER PRIMARY KEY,
         name TEXT,
         start_date TEXT,
         time_zone TEXT,

@@ -6,10 +6,11 @@ def save_activities_to_db(activities, db_path="data/activities.db"):
 
     for act in activities:
         c.execute("""
-        INSERT OR IGNORE INTO activities (id, name, start_date, time_zone, activity_type, distance, moving_time, polyline, last_updated)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT OR IGNORE INTO activities (athleteid, activityid, name, start_date, time_zone, activity_type, distance, moving_time, polyline, last_updated)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         """, (
-            act["id"],
+            act["athleteid"],
+            act["activityid"],
             act["name"],
             act["start_date"],
             act["time_zone"],
@@ -27,22 +28,23 @@ def load_activities_from_db(db_path="data/activities.db"):
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
 
-    c.execute("SELECT id, name, start_date, time_zone, activity_type, distance, moving_time, polyline, last_updated FROM activities")
+    c.execute("SELECT athleteid, activityid, name, start_date, time_zone, activity_type, distance, moving_time, polyline, last_updated FROM activities")
     rows = c.fetchall()
 
     conn.close()
     activities = []
     for row in rows:
         activities.append({
-            "id": row[0],
-            "name": row[1],
-            "start_date": row[2],
-            "time_zone": row[3],
-            "activity_type": row[4],
-            "distance": row[5],
-            "moving_time": row[6],
-            "polyline": row[7],
-            "last_updated": row[8]
+            "athleteid": row[0],
+            "activityid": row[1],
+            "name": row[2],
+            "start_date": row[3],
+            "time_zone": row[4],
+            "activity_type": row[5],
+            "distance": row[6],
+            "moving_time": row[7],
+            "polyline": row[8],
+            "last_updated": row[9]
         })
     print(f"Loaded {len(activities)} activities from database at {db_path}")
     return activities

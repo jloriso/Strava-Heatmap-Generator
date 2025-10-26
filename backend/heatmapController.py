@@ -38,7 +38,11 @@ def add_weighted_heatmap(m, activities):
     ).add_to(m)
 
 def build_frequency_map(activities, locations=None, output_file="heatmaps/standard_heatmap.html"):
-    m = folium.Map(location=[42.0707, -87.7368], zoom_start=10, tiles="cartodbpositron")
+    m = folium.Map(
+        location=[42.0707, -87.7368],
+          zoom_start=10, 
+          max_zoom=15,
+          tiles="cartodbpositron")
 
     grouped = group_activities_by_type(activities)
 
