@@ -40,7 +40,7 @@ def add_bookmark_sidebar(m, locations):
     </style>
 
     <div class="sidebar">
-        <h4>📍 Locations</h4>
+        <h4>Locations</h4>
         {}
     </div>
 
