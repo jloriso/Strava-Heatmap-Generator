@@ -1,0 +1,33 @@
+.sidebar {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    z-index: 9999;
+    background-color: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    font-family: Arial, sans-serif;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+.sidebar h4 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    text-align: center;
+}
+.sidebar button {
+    display: block;
+    width: 100%;
+    margin: 4px 0;
+    padding: 6px;
+    border: none;
+    background-color: #2a93d5;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+.sidebar button:hover {
+    background-color: #1b6fa1;
+}
