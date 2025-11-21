@@ -48,6 +48,7 @@ def refresh_access_token():
             f"STRAVA_REFRESH_TOKEN={tokens['refresh_token']}\n"
             f"STRAVA_ACCESS_TOKEN={tokens['access_token']}\n"
             f"STRAVA_EXPIRES_AT={tokens['expires_at']}\n"
+            f"CODE={CODE}\n"
         )
 
     return tokens
