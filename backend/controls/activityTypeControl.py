@@ -18,7 +18,8 @@ def add_activity_type_sidebar(m, activity_types):
     for act_type in activity_types:
         checkboxes.append(f'''
         <label>
-            <input type="checkbox" id="toggle-{act_type}" checked>
+            <input type="checkbox" id="toggle-{act_type}" checked
+                   onchange="document.dispatchEvent(new CustomEvent('activityCheckboxChanged', {{ detail: {{ type: '{act_type}', checked: this.checked }} }}))">
             {act_type}
         </label>
         ''')

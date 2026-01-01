@@ -33,4 +33,4 @@ if __name__ == "__main__":
         "World": [20.0, 0.0, 3]
     }
 
-    heatmapController.build_frequency_map(routes, locations=locations)
+    heatmapController.build_activity_map(routes, locations=locations)
