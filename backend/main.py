@@ -7,20 +7,20 @@ import stravaRepository
 if __name__ == "__main__":
     environmentManager.init_env()
 
-    activities = stravaRepository.get_newest_activites()
+    # activities = stravaRepository.get_newest_activites()
 
-    if activities:
-        dbManager.save_activities_to_db([{
-            "athleteid": activity.get("athlete", {}).get("id"),
-            "activityid": activity.get("id"),
-            "name": activity.get("name"),
-            "start_date": activity.get("start_date"),
-            "time_zone": activity.get("time_zone"),
-            "activity_type": activity.get("sport_type"),
-            "distance": activity.get("distance"),
-            "moving_time": activity.get("moving_time"),
-            "polyline": activity.get("map", {}).get("summary_polyline")
-        } for activity in activities])
+    # if activities:
+    #     dbManager.save_activities_to_db([{
+    #         "athleteid": activity.get("athlete", {}).get("id"),
+    #         "activityid": activity.get("id"),
+    #         "name": activity.get("name"),
+    #         "start_date": activity.get("start_date"),
+    #         "time_zone": activity.get("time_zone"),
+    #         "activity_type": activity.get("sport_type"),
+    #         "distance": activity.get("distance"),
+    #         "moving_time": activity.get("moving_time"),
+    #         "polyline": activity.get("map", {}).get("summary_polyline")
+    #     } for activity in activities])
 
     dbModel = dbManager.load_activities_from_db()
 
