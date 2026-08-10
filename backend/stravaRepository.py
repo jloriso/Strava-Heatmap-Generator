@@ -22,7 +22,7 @@ def get_strava_activities():
 
         if res.status_code == 401:
             print("Access token expired, refreshing...")
-            refresh_access_token()
+            #refresh_access_token()
             header["Authorization"] = f"Bearer {ACCESS_TOKEN}"
             res = requests.get(url, headers=header)
 
@@ -45,6 +45,10 @@ def get_strava_activities():
     return activities
 
 def get_newest_activites():
+    newData = []
+    PAGE = 1
+    PER_PAGE = 100
+
     after_ts = dbManager.get_latest_activity_date()
 
     if after_ts is None:
@@ -54,7 +58,14 @@ def get_newest_activites():
     headers = {'Authorization': f'Bearer {ACCESS_TOKEN}'}
     params = {'after': after_ts} if after_ts else {}
 
-    res = requests.get(url, headers=headers, params=params)
+    print(ACCESS_TOKEN)
+
+    if after_ts:
+        url += "?" + "access_token=" + str(ACCESS_TOKEN) + "&after=" + str(after_ts) + "&per_page=" + str(PER_PAGE)
+    else:
+        url += "?" + "access_token=" + str(ACCESS_TOKEN) + "&per_page=" + str(PER_PAGE)
+    
+    res = requests.get(url)
     if res.status_code == 401:
         print("Access token expired, refreshing...")
         refresh_access_token()
@@ -66,10 +77,19 @@ def get_newest_activites():
         return
 
     new_activities = res.json()
+    # if not new_activities:
+    #     break
 
-    if new_activities:
-        print(f"Fetched {len(new_activities)} activities from Strava")
-        return new_activities
+    for activity in new_activities:
+        if "map" not in activity or "summary_polyline" not in activity["map"]:
+            continue
+
+    newData.extend(new_activities)
+    PAGE += 1
+
+    if newData:
+        print(f"Fetched {len(newData)} activities from Strava")
+        return newData
     else:
         print("No new activities found.")
 
@@ -81,7 +101,7 @@ def one_request():
     res = requests.get(url, headers=headers, params=params)
     if res.status_code == 401:
         print("Access token expired, refreshing...")
-        refresh_access_token()
+        #refresh_access_token()
         headers["Authorization"] = f"Bearer {ACCESS_TOKEN}"
         res = requests.get(url, headers=headers, params=params)
 

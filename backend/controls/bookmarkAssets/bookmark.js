@@ -40,18 +40,20 @@ function restoreHeatLayers(map, store) {
     });
 }
 
-function flyToLocation(lat, lon, zoom) {
+function flyToLocation(lat, lon, zoom, mapType) {
     const map = getFoliumMap();
     if (!map) {
         console.error("Map object not found!");
         return;
     }
 
-    const heatStore = detachHeatLayers(map);
+    if(mapType === "heatmap") {
+        const heatStore = detachHeatLayers(map);
 
-    map.once('moveend', function() {
-        restoreHeatLayers(map, heatStore);
-    });
+        map.once('moveend', function() {
+            restoreHeatLayers(map, heatStore);
+        });
+    }
 
     map.flyTo([lat, lon], zoom);
 }

@@ -54,7 +54,7 @@ def build_activity_map(
 
 
     if locations:
-        bookMarkControl.add_bookmark_sidebar(m, locations)
+        bookMarkControl.add_bookmark_sidebar(m, locations, mapType="heatmap")
 
     activityTypeControl.add_activity_type_sidebar(m, ['Run', 'Ride', 'Walk'])
 

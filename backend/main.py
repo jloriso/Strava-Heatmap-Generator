@@ -3,11 +3,12 @@ import dbManager
 import heatmapController
 import environmentManager
 import stravaRepository
+import linemapController
 
 if __name__ == "__main__":
     environmentManager.init_env()
 
-    # activities = stravaRepository.get_newest_activites()
+    #activities = stravaRepository.get_newest_activites()
 
     # if activities:
     #     dbManager.save_activities_to_db([{
@@ -34,3 +35,4 @@ if __name__ == "__main__":
     }
 
     heatmapController.build_activity_map(routes, locations=locations)
+    linemapController.build_frequency_weighted_map(routes, locations=locations)

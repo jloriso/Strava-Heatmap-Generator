@@ -1,4 +1,5 @@
 import folium
+import json
 from pathlib import Path
 
 ASSETS_DIR = Path(__file__).parent / "bookmarkAssets"
@@ -9,14 +10,15 @@ def _read_text(path: Path) -> str:
     except FileNotFoundError:
         return ""
 
-def add_bookmark_sidebar(m, locations):
+def add_bookmark_sidebar(m, locations, mapType):
     css = _read_text(ASSETS_DIR / "bookmark.css")
     html = _read_text(ASSETS_DIR / "bookmark.html")
     js = _read_text(ASSETS_DIR / "bookmark.js")
+    map_type_js = json.dumps(mapType)
 
     buttons_html = ""
     for name, (lat, lon, zoom) in locations.items():
-        buttons_html += f'<button onclick="flyToLocation({lat}, {lon}, {zoom})">{name}</button>'
+        buttons_html += f'<button onclick="flyToLocation({lat}, {lon}, {zoom}, {map_type_js})">{name}</button>'
 
     final_html = html.replace("<!--BUTTONS-->", buttons_html)
 
